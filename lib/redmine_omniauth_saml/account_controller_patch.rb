@@ -53,6 +53,9 @@ module Redmine::OmniAuthSAML
           successful_authentication(user)
           #cannot be set earlier, because sucessful_authentication() triggers reset_session()
           session[:logged_in_with_saml] = true
+          session[:name_identifier_value] = auth.name_id
+          session[:name_identifier_format] = auth.name_id_format
+          session[:sessionindex] = auth.sessionindex
         end
       end
 
@@ -150,7 +153,9 @@ module Redmine::OmniAuthSAML
         session[:transaction_id] = logout_request.uuid
         logger.info "New SP SLO for userid '#{User.current.login}' transactionid '#{session[:transaction_id]}'"
 
-        settings[:name_identifier_value] ||= name_identifier_value
+        settings[:name_identifier_value] = session[:name_identifier_value]
+        settings[:name_identifier_value] = session[:name_identifier_format]
+        settings[:sessionindex] = settings[:sessionindex]
 
         relay_state = home_url # url_for controller: 'saml', action: 'index'
         redirect_to(logout_request.create(OneLogin::RubySaml::Settings.new(settings), :RelayState => relay_state))
